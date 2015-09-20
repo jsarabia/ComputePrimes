@@ -1,5 +1,4 @@
-import java.util.LinkedList;
-import java.util.concurrent.Semaphore;
+import java.lang.reflect.Array;
 
 /**
  * Created by Joe on 9/20/2015.
@@ -11,11 +10,13 @@ public class ComputePrimes {
 
     //need to include the last index as addressable
     public static boolean[] sieveTable = new boolean[numbersToCheck+1];
-    public static int lastNumberNeeded = (int)Math.floor(Math.sqrt(numbersToCheck));
+    public static int lastNumberNeeded = (int)Math.ceil(Math.sqrt(numbersToCheck));
 
 
     public static void main(String[] args){
 
+        sieveTable[0] = true;
+        sieveTable[1] = true;
         Thread[] threads =  new Thread[numThreads];
         System.out.println("Initializing threads...");
         for(int i = 0; i < numThreads; i++){
@@ -24,38 +25,29 @@ public class ComputePrimes {
             Thread temp = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    boolean isFinished = false;
                     final int tid = index;
+                    int startIndex = Math.max((numbersToCheck / 8) * tid, 1);
+                    int endIndex = Math.min((numbersToCheck / 8) * (tid+1), numbersToCheck);
+                    for(int numberToCheck = 2; numberToCheck <= lastNumberNeeded; numberToCheck++){
 
-                    while(!isFinished){
-
-                        int startIndex = (numbersToCheck / 8) * tid;
-                        int endIndex = Math.min((numbersToCheck / 8) * (tid+1), numbersToCheck+1);
-                        int numberToCheck = 0;
-                        boolean brokeOut = false;
-                        //get the starting number to check through the range
-                        for(int i = 2; i <= lastNumberNeeded; i++){
-                            if(sieveTable[i] == false){
-                                numberToCheck = i;
-                                brokeOut = true;
-                                break;
-                            }
-                        }
                         System.out.println("number to Check is " + numberToCheck);
-                        //this thread is completed
-                        if(!brokeOut){
-                            break;
+
+                        if(sieveTable[numberToCheck] == true) {
+                            continue;
                         }
 
                         int offset = 0;
-                        for(int i = startIndex; i < endIndex; i++){
+                        for(int i = startIndex; i <= endIndex; i++){
                             if(i % numberToCheck == 0){
-                                sieveTable[i] = true;
                                 offset = i;
                                 break;
                             }
                         }
-                        for(int i = offset; i < endIndex; i += numberToCheck){
+
+                        for(int i = offset; i <= endIndex; i += numberToCheck){
+                            if(i == numberToCheck) {
+                                continue;
+                            }
                             sieveTable[i] = true;
                         }
                     }
@@ -76,10 +68,10 @@ public class ComputePrimes {
             }
         }
         System.out.println("Total execution time: " + (System.currentTimeMillis() - startTime));
-        int sum = 0;
+        long sum = 0;
         int numPrimes = 0;
         for(int i = 0; i < sieveTable.length; i++){
-            if(sieveTable[i] == true){
+            if(sieveTable[i] == false){
                 sum+=i;
                 numPrimes++;
             }
