@@ -6,64 +6,57 @@ import java.util.concurrent.Semaphore;
  */
 public class ComputePrimes {
 
-    public static int counter = 1;
-    public static int numPrimesFound = 0;
-    public static int sum = 0;
-    public static LinkedList<Integer> top10 = new LinkedList<>();
+    public static int numbersToCheck = (int)Math.pow(10,8);
+    public static int numThreads = 8;
 
-    public static boolean computePrime(int x){
-        if (x == 1){
-            return false;
-        }
-        if (x <= 3){
-            return true;
-        }
-        for(int i = 4; i < x; i++){
-            if (x % i == 0){
-                return false;
-            }
-        }
-        return true;
-    }
+    //need to include the last index as addressable
+    public static boolean[] sieveTable = new boolean[numbersToCheck+1];
+    public static int lastNumberNeeded = (int)Math.floor(Math.sqrt(numbersToCheck));
+
 
     public static void main(String[] args){
 
-        Semaphore addPrimeLock = new Semaphore(1);
-        Semaphore counterLock = new Semaphore(1);
-        Thread[] threads =  new Thread[8];
-
+        Thread[] threads =  new Thread[numThreads];
         System.out.println("Initializing threads...");
-        for(int i = 0; i < 8; i++){
+        for(int i = 0; i < numThreads; i++){
 
+            final int index = i;
             Thread temp = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     boolean isFinished = false;
-                    int numberToTry;
+                    final int tid = index;
+
                     while(!isFinished){
-                        try {
-                            counterLock.acquire();
-                            numberToTry = counter;
-                            counter++;
-                            System.out.println("Trying number: " + numberToTry);
-                            counterLock.release();
-                            if(numberToTry > Math.pow(10,8)){
+
+                        int startIndex = (numbersToCheck / 8) * tid;
+                        int endIndex = Math.min((numbersToCheck / 8) * (tid+1), numbersToCheck+1);
+                        int numberToCheck = 0;
+                        boolean brokeOut = false;
+                        //get the starting number to check through the range
+                        for(int i = 2; i <= lastNumberNeeded; i++){
+                            if(sieveTable[i] == false){
+                                numberToCheck = i;
+                                brokeOut = true;
                                 break;
                             }
-                            boolean isPrime = computePrime(numberToTry);
-                            if(isPrime){
-                                addPrimeLock.acquire();
-                                numPrimesFound++;
-                                top10.addLast(numberToTry);
-                                if(top10.size() > 10){
-                                    top10.removeFirst();
-                                }
-                                sum+= numberToTry;
-                                addPrimeLock.release();
-                            }
+                        }
+                        System.out.println("number to Check is " + numberToCheck);
+                        //this thread is completed
+                        if(!brokeOut){
+                            break;
+                        }
 
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        int offset = 0;
+                        for(int i = startIndex; i < endIndex; i++){
+                            if(i % numberToCheck == 0){
+                                sieveTable[i] = true;
+                                offset = i;
+                                break;
+                            }
+                        }
+                        for(int i = offset; i < endIndex; i += numberToCheck){
+                            sieveTable[i] = true;
                         }
                     }
                 }
@@ -83,11 +76,19 @@ public class ComputePrimes {
             }
         }
         System.out.println("Total execution time: " + (System.currentTimeMillis() - startTime));
-        System.out.println("Total number of primes found: " + numPrimesFound);
-        System.out.println("Sum of all primes found: " + sum);
-        System.out.println("Top ten maximum primes, listed in order from lowest to highest: ");
-        for(int i = 0; i < top10.size(); i++){
-            System.out.println(top10.remove());
+        int sum = 0;
+        int numPrimes = 0;
+        for(int i = 0; i < sieveTable.length; i++){
+            if(sieveTable[i] == true){
+                sum+=i;
+                numPrimes++;
+            }
         }
+        System.out.println("Total number of primes found: " + numPrimes);
+        System.out.println("Sum of all primes found: " + sum);
+        //System.out.println("Top ten maximum primes, listed in order from lowest to highest: ");
+        //for(int i = 0; i < top10.size(); i++){
+        //    System.out.println(top10.remove());
+        //}
     }
 }
