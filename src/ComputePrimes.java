@@ -1,5 +1,3 @@
-import java.lang.reflect.Array;
-
 /**
  * Created by Joe on 9/20/2015.
  */
@@ -78,9 +76,19 @@ public class ComputePrimes {
         }
         System.out.println("Total number of primes found: " + numPrimes);
         System.out.println("Sum of all primes found: " + sum);
-        //System.out.println("Top ten maximum primes, listed in order from lowest to highest: ");
-        //for(int i = 0; i < top10.size(); i++){
-        //    System.out.println(top10.remove());
-        //}
+        System.out.println("Top ten maximum primes, listed in order from lowest to highest: ");
+        int count =0;
+        int i =0;
+        int array[] = new int[10];
+        while(count < 10){
+            if(sieveTable[numbersToCheck-i - 1] == false){
+                array[count] = numbersToCheck - i - 1;
+                count++;
+            }
+            i++;
+        }
+        for(int j = 9; j >=0; j--){
+            System.out.println(array[j]);
+        }
     }
 }
